@@ -11,6 +11,10 @@ npm i git-code-count -g
 git-code-count
 ```
 
+# 参数说明
++ `工作目录`：jiash，我的项目一般都集中种都放在一个文件夹下。如我有一个项目，具体路径:`D:/js/work/xxx`，则我的工作目录就是`D:/js/work`
++ `提交人关键字`：git上提交的日志，会有作者来表示是谁提交的。如我提交的代码，author是`tanxin@xxx.com`，那我这个参数输入`tanxin`就可以了，当然也可以输入全部来百分百匹配。
+
 # 注意
 `nodejs` 版本请尽量用高版本，因为我使用了 `async` , `await` , `trim` 等新语法，而又懒得转译。。。
 
