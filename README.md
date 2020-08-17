@@ -1,9 +1,12 @@
 # 简介
-
 这是一款用于统计你在git上提交了多少代码量的统计工具
 
-# 使用
+# 安装
+```
+npm i git-code-count -g
+```
 
+# 使用
 ```
 git-code-count
 ```

@@ -227,6 +227,4 @@ async function main() {
   printLog(projectInfoList, fromDay, endDay);
 }
 
-const p ='D:/workSpace/jsproject/tungee';
-
 main();

@@ -1,8 +1,9 @@
 {
   "name": "git-code-count",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "git代码数量统计",
   "main": "index.js",
+  "bin": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
