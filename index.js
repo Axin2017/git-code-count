@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const simpleGit = require('simple-git');
 const chalk = require('chalk');
 const inquirer = require('inquirer');
