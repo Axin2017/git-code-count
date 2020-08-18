@@ -42,7 +42,7 @@ async function inputParam() {
 
   const { fromDay } = await inquirer.prompt([{
     name: 'fromDay',
-    message: '输入统计区间的开始日期，格式为YYYY-MM-DD',
+    message: '输入统计的开始日期，格式为YYYY-MM-DD',
     validate: answer => {
       return util.isValidateDateStr(answer) || '输入日期格式不正确，正确格式如: 2020-01-01';
     }
@@ -50,7 +50,7 @@ async function inputParam() {
 
   const { endDay } = await inquirer.prompt([{
     name: 'endDay',
-    message: '输入统计区间的结束日期，格式为YYYY-MM-DD',
+    message: '输入统计的结束日期，格式为YYYY-MM-DD',
     validate: answer => {
       return util.isValidateDateStr(answer) || '输入日期格式不正确，正确格式如: 2020-01-01';
     }
@@ -71,7 +71,7 @@ async function inputParam() {
   });
   const { projectList } = await inquirer.prompt({
     name: 'projectList',
-    message: '请选择要统计的项目，空格选择，回车结束选择',
+    message: '选择要统计的项目',
     type: 'checkbox',
     choices: gitProjectList,
     validate: checkedList => {
@@ -106,7 +106,7 @@ async function getBranchList(workSpace, projectInfoList, index) {
   const allBranchList = (await git.branchLocal()).all;
   const { branchList } = await inquirer.prompt({
     name: 'branchList',
-    message: `请选择 ${chalk.green(name)} 要统计的分支，空格选择，回车结束选择`,
+    message: `选择${chalk.green(name)}要统计的分支`,
     type: 'checkbox',
     choices: allBranchList,
     validate: checkedList => {
