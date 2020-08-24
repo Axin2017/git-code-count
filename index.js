@@ -137,8 +137,8 @@ async function _getLogList(projectInfo, branchIndex, { timeDuration, authorKey }
   await git.checkout(branch.name);
   const log = await git.log({
     '--stat': true,
-    '--since': timeDuration[0],
-    '--until': timeDuration[1],
+    '--since': `${timeDuration[0]} 00:00:00`,
+    '--until': `${timeDuration[1]} 23:59:59`,
     '--author': authorKey
   });
   branch.log = log.all;
