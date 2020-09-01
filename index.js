@@ -5,6 +5,7 @@ const chalk = require('chalk');
 const inquirer = require('inquirer');
 const fs = require('fs');
 const path = require('path');
+const process = require('process');
 
 const util = require('./util');
 
@@ -24,21 +25,22 @@ function addRecord(insertions, deletions) {
   }
 }
 
-async function inputParam() {
-  const { workSpace } = await inquirer.prompt([{
-    name: 'workSpace',
-    message: '输入你的工作目录',
-    validate: answer => {
-      try {
-        if (!answer || !fs.statSync(answer.trim()).isDirectory) {
-          return '输入的路径不是合法的目录';
-        }
-        return true;
-      } catch {
-        return '输入的路径不是合法的目录';
-      }
+function getConfig() {
+  const configFilePath = path.resolve(process.cwd(), './.git-code-count-config.js');
+  if (!fs.existsSync(configFilePath)) {
+    console.log(`No ${chalk.green('git-code-count-config.js')} file founded,create it first. See ${chalk.magenta('https://github.com/Axin2017/git-code-count')}`);
+    throw new Error('No config file founded');
+  } else {
+    const { availableProject, author } = require(configFilePath);
+    if (!availableProject || !Array.isArray(availableProject)) {
+      console.log(`Config item ${chalk.bold('availableProject')} is necessary. See ${chalk.magenta('https://github.com/Axin2017/git-code-count')}`);
+      throw new Error('Invalid config');
     }
-  }]);
+    return { availableProject, author }
+  }
+}
+
+async function inputParam(availableProject, author) {
 
   const { fromDay } = await inquirer.prompt([{
     name: 'fromDay',
@@ -56,33 +58,31 @@ async function inputParam() {
     }
   }]);
 
-  const { authorKey } = await inquirer.prompt([{
-    name: 'authorKey',
-    message: '输入提交人关键字',
-    validate: answer => {
-      return (answer && !!answer.trim()) || '输入提交人关键字'
-    }
-  }]);
+  let authorKey = author;
+  if (!authorKey) {
+    const { inputAuthor } = await inquirer.prompt([{
+      name: 'inputAuthor',
+      message: '输入提交人关键字',
+      validate: answer => {
+        return (answer && !!answer.trim()) || '输入提交人关键字'
+      }
+    }]);
+    authorKey = inputAuthor;
+  }
 
-  const dirList = fs.readdirSync(workSpace);
-  const gitProjectList = dirList.filter(dir => {
-    const prjPath = path.join(workSpace, dir);
-    return fs.statSync(prjPath).isDirectory() && fs.readdirSync(prjPath).find(subDir => subDir === '.git')
-  });
-  const { projectList } = await inquirer.prompt({
-    name: 'projectList',
+  const { projectNameList } = await inquirer.prompt({
+    name: 'projectNameList',
     message: '选择要统计的项目',
     type: 'checkbox',
-    choices: gitProjectList,
+    choices: availableProject.map(pr => pr.name),
     validate: checkedList => {
       return checkedList.length > 0 || '请选择至少一个项目';
     }
   })
 
   return {
-    workSpace,
+    projectNameList,
     authorKey,
-    projectList,
     fromDay,
     endDay
   }
@@ -98,10 +98,11 @@ async function getDescriptionList(git, branchs, index) {
   }
 }
 
-async function getBranchList(workSpace, projectInfoList, index) {
+async function getBranchList(projectInfoList, index) {
   const projectInfo = projectInfoList[index];
-  currentProject = projectInfo;
-  projectInfo.git = simpleGit(path.join(workSpace, projectInfo.name));
+  currentProject = projectInfo.name;
+  console.log(projectInfo.path);
+  projectInfo.git = simpleGit(projectInfo.path);
   const { name, git } = projectInfo;
   const allBranchList = (await git.branchLocal()).all;
   const { branchList } = await inquirer.prompt({
@@ -124,7 +125,7 @@ async function getBranchList(workSpace, projectInfoList, index) {
     }
   }));
   if (index < projectInfoList.length - 1) {
-    await getBranchList(workSpace, projectInfoList, index + 1);
+    await getBranchList(projectInfoList, index + 1);
   } else {
     return projectInfoList;
   }
@@ -157,7 +158,7 @@ async function getLogList(projectInfoList, index, { timeDuration, authorKey }) {
   }
 }
 
-function printLog(projectInfoList, fromDay, endDay) {
+function printLog(projectInfoList, fromDay, endDay, author) {
   projectInfoList.forEach(projectInfo => {
     currentProject = projectInfo.name;
     console.log('------------------------------------------------------------------------------------------------------------------');
@@ -186,37 +187,44 @@ function printLog(projectInfoList, fromDay, endDay) {
     });
     console.log(`${chalk.green(projectInfo.name)}  共计:    +${projectInfo.total.insertions}    -${projectInfo.total.deletions}    =${projectInfo.total.total}`);
   })
-  
+
   console.log('==================================================================================================================');
   console.log();
-  console.log(chalk.green(`本次统计时间区间: ${fromDay}至${endDay}    共计:  +${total.insertions}    -${total.deletions}    =${total.total}`));
+  console.log(chalk.green(`本次统计时间区间: ${fromDay}至${endDay}    作者: ${author}    共计: +${total.insertions} -${total.deletions}  =${total.total}`));
   console.log();
 }
 
 async function main() {
+  // 获取配置
+  const { availableProject, author } = getConfig();
+
   // 获取基本输入参数
   const {
-    workSpace,
+    projectNameList,
     authorKey,
-    projectList,
     fromDay,
     endDay
-  } = await inputParam();
+  } = await inputParam(availableProject, author);
 
   // 转换一下数据结构
-  const projectInfoList = projectList.map(project => ({
-    name: project,
-    branchs: [],
-    git: null,
-    total: {
-      insertions: 0,
-      deletions: 0,
-      total: 0
-    }
-  }));
+  const projectInfoList = projectNameList.map(name => {
+    const pro = availableProject.find(p => p.name === name);
+    return {
+      name,
+      // 转换成绝对路径，方便后续操作
+      path: path.resolve(process.cwd(), pro.path),
+      branchs: [],
+      git: null,
+      total: {
+        insertions: 0,
+        deletions: 0,
+        total: 0
+      }
+    };
+  });
 
   // 根据项目选取要统计的分支
-  await getBranchList(workSpace, projectInfoList, 0);
+  await getBranchList(projectInfoList, 0);
 
   // 获取日志
   await getLogList(projectInfoList, 0, {
@@ -224,7 +232,7 @@ async function main() {
     authorKey
   });
 
-  printLog(projectInfoList, fromDay, endDay);
+  printLog(projectInfoList, fromDay, endDay, authorKey);
 }
 
 main();
