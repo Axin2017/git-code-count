@@ -140,7 +140,9 @@ async function _getLogList(projectInfo, branchIndex, { timeDuration, authorKey }
     '--stat': true,
     '--since': `${timeDuration[0]} 00:00:00`,
     '--until': `${timeDuration[1]} 23:59:59`,
-    '--author': authorKey
+    '--author': authorKey,
+    '--no-merges': true,
+    '--first-parent': true
   });
   branch.log = log.all;
   if (branchIndex < projectInfo.branchs.length - 1) {
@@ -166,8 +168,9 @@ function printLog(projectInfoList, fromDay, endDay, author) {
     projectInfo.branchs.forEach(branch => {
       console.log(`    ${branch.name}`);
       branch.log.forEach(log => {
-        const { diff } = log;
-        if (diff) {
+        // console.log(log);
+        const { diff, refs } = log;
+        if (diff && !refs.trim()) {
           const { insertions, deletions, total } = branch.total;
           branch.total = {
             insertions: insertions + diff.insertions,

@@ -28,7 +28,7 @@ function formartTime(timeStr) {
   if (!(timeStr instanceof Date)) {
     timeStr = new Date(timeStr);
   }
-  return `${timeStr.getFullYear()}-${timeStr.getMonth()}-${timeStr.getDate()} ${timeStr.getHours()}:${timeStr.getMinutes()}:${timeStr.getSeconds()}  ${dayOfWeekMap[timeStr.getDay()]}`;
+  return `${timeStr.getFullYear()}-${timeStr.getMonth() + 1}-${timeStr.getDate()} ${timeStr.getHours()}:${timeStr.getMinutes()}:${timeStr.getSeconds()}  ${dayOfWeekMap[timeStr.getDay()]}`;
 }
 
 module.exports = {
