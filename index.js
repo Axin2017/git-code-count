@@ -57,7 +57,7 @@ async function inputParam(availableProject, author) {
       return util.isValidateDateStr(answer) || '输入日期格式不正确，正确格式如: 2020-01-01';
     }
   }]);
-
+  
   let authorKey = author;
   if (!authorKey) {
     const { inputAuthor } = await inquirer.prompt([{
@@ -168,9 +168,8 @@ function printLog(projectInfoList, fromDay, endDay, author) {
     projectInfo.branchs.forEach(branch => {
       console.log(`    ${branch.name}`);
       branch.log.forEach(log => {
-        // console.log(log);
-        const { diff, refs } = log;
-        if (diff && !refs.trim()) {
+        const { diff } = log;
+        if (diff) {
           const { insertions, deletions, total } = branch.total;
           branch.total = {
             insertions: insertions + diff.insertions,

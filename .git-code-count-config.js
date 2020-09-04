@@ -1,8 +1,8 @@
 module.exports = {
   availableProject:[
     {
-      name: '运营平台',
-      path: '../../tungee/koala'
+      name: '智能呼叫',
+      path: '../../tungee/mockingbird'
     }
   ],
   author: 'tanxin'
