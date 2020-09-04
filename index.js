@@ -197,6 +197,8 @@ function printLog(projectInfoList, fromDay, endDay, author) {
 }
 
 async function main() {
+  console.log(chalk.red('使用前请确保所有分支都已经提交代码!'));
+
   // 获取配置
   const { availableProject, author } = getConfig();
 
