@@ -135,8 +135,8 @@ async function _getLogList(projectInfo, branchIndex, { timeDuration, authorKey }
   currentProject = projectInfo.name;
   const branch = projectInfo.branchs[branchIndex];
   const git = projectInfo.git;
-  await git.checkout(branch.name);
   const log = await git.log({
+    [branch.name]: true,
     '--stat': true,
     '--since': `${timeDuration[0]} 00:00:00`,
     '--until': `${timeDuration[1]} 23:59:59`,
@@ -197,8 +197,6 @@ function printLog(projectInfoList, fromDay, endDay, author) {
 }
 
 async function main() {
-  console.log(chalk.red('使用前请确保所有分支都已经提交代码!'));
-
   // 获取配置
   const { availableProject, author } = getConfig();
 
