@@ -1,6 +1,6 @@
 {
   "name": "git-code-count",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "git代码数量统计",
   "main": "index.js",
   "bin": "index.js",

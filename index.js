@@ -11,17 +11,17 @@ const util = require('./util');
 
 // 用于报错指示当前处于哪个项目
 let currentProject = '';
-// 代码总数
-let total = {
-  insertions: 0,
-  deletions: 0,
-  total: 0
-}
-function addRecord(insertions, deletions) {
-  total = {
-    insertions: total.insertions + insertions,
-    deletions: total.deletions + deletions,
-    total: total.total + insertions - deletions
+
+// 用于存储代码提交的信息，代码提交的hash码作为Key来去重
+const diffMap = {}
+
+function addRecord(hash, insertions, deletions) {
+  if (!diffMap[hash]) {
+    diffMap[hash] = {
+      insertions,
+      deletions,
+      total: insertions - deletions
+    }
   }
 }
 
@@ -135,6 +135,7 @@ async function _getLogList(projectInfo, branchIndex, { timeDuration, authorKey }
   currentProject = projectInfo.name;
   const branch = projectInfo.branchs[branchIndex];
   const git = projectInfo.git;
+  // https://git-scm.com/docs/git-log
   const log = await git.log({
     [branch.name]: true,
     '--stat': true,
@@ -142,7 +143,9 @@ async function _getLogList(projectInfo, branchIndex, { timeDuration, authorKey }
     '--until': `${timeDuration[1]} 23:59:59`,
     '--author': authorKey,
     '--no-merges': true,
-    '--first-parent': true
+    '--reverse': true,
+    // 加了这个属性之后，本分支commit-->push-->发起mr-->合并mr-->切换master-->pull-->切换本分支-->merge master--> 这个时候，之前push的那些已经合并到master的就查不到了
+    // '--first-parent': true
   });
   branch.log = log.all;
   if (branchIndex < projectInfo.branchs.length - 1) {
@@ -168,7 +171,7 @@ function printLog(projectInfoList, fromDay, endDay, author) {
     projectInfo.branchs.forEach(branch => {
       console.log(`    ${branch.name}`);
       branch.log.forEach(log => {
-        const { diff } = log;
+        const { diff, hash, message, date } = log;
         if (diff) {
           const { insertions, deletions, total } = branch.total;
           branch.total = {
@@ -176,8 +179,8 @@ function printLog(projectInfoList, fromDay, endDay, author) {
             deletions: deletions + diff.deletions,
             total: total + diff.insertions - diff.deletions
           };
-          addRecord(diff.insertions, diff.deletions);
-          console.log(`        ${util.formartTime(log.date)}    ${log.message}    +${diff.insertions}    -${diff.deletions}    =${diff.insertions - diff.deletions}`);
+          addRecord(hash, diff.insertions, diff.deletions);
+          console.log(`        ${util.formartTime(date)}    ${hash} ${message}    +${diff.insertions}    -${diff.deletions}    =${diff.insertions - diff.deletions}`);
         }
       });
       console.log(`        共计:    +${branch.total.insertions}    -${branch.total.deletions}    =${branch.total.total}`);
@@ -192,7 +195,18 @@ function printLog(projectInfoList, fromDay, endDay, author) {
 
   console.log('==================================================================================================================');
   console.log();
-  console.log(chalk.green(`本次统计时间区间: ${fromDay}至${endDay}    作者: ${author}    共计: +${total.insertions} -${total.deletions}  =${total.total}`));
+  
+  const total = {
+    insertions: 0,
+    deletions: 0,
+    total: 0
+  };
+  for(const key in diffMap) {
+    total.insertions += diffMap[key].insertions;
+    total.deletions += diffMap[key].deletions;
+    total.total += diffMap[key].total;
+  }
+  console.log(chalk.green(`本次统计时间区间: ${fromDay}至${endDay}    作者: ${author}    经过commitid去重后共计: +${total.insertions} -${total.deletions}  =${total.total}`));
   console.log();
 }
 
